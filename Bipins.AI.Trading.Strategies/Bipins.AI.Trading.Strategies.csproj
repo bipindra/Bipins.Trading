@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Bipins.AI.Trading.Strategies</RootNamespace>
+    <AssemblyName>Bipins.AI.Trading.Strategies</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Bipins.AI.Trading.Domain\Bipins.AI.Trading.Domain.csproj" />
+    <ProjectReference Include="..\Bipins.AI.Trading.Indicators\Bipins.AI.Trading.Indicators.csproj" />
+  </ItemGroup>
+
+</Project>

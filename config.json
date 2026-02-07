@@ -1,0 +1,9 @@
+{
+  "Symbols": [ "BTCUSD" ],
+  "Timeframes": [ "1d" ],
+  "Start": "2020-01-01",
+  "End": "2024-12-31",
+  "InitialCash": 100000,
+  "WarmupBars": 100,
+  "ChartExportPath": "signals.json"
+}

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Bipins.AI.Trading.Persistence</RootNamespace>
+    <AssemblyName>Bipins.AI.Trading.Persistence</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Bipins.AI.Trading.Domain\Bipins.AI.Trading.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
