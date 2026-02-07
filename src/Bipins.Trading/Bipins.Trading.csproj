@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Bipins.Trading</RootNamespace>
+    <AssemblyName>Bipins.Trading</AssemblyName>
+    
+    <!-- Package Metadata -->
+    <Version>1.0.0</Version>
+    <Authors>Bipins.Trading</Authors>
+    <Company>Bipins.Trading</Company>
+    <Description>Production-grade .NET algorithmic trading library with 100+ technical indicators and a broker-agnostic strategy engine for backtesting and paper trading.</Description>
+    <PackageId>Bipins.Trading</PackageId>
+    <PackageTags>trading;indicators;technical-analysis;backtesting;algorithmic-trading;finance;stock-market;crypto</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/bipins/bipins-trading</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/bipins/bipins-trading</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    
+    <!-- Documentation -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\README.md"/>
+  </ItemGroup>
+
+</Project>
