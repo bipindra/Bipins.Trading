@@ -10,16 +10,20 @@ public class RsiTests
     public void WarmupPeriod_IsRespected()
     {
         var rsi = new Rsi(14);
-        Assert.True(rsi.WarmupPeriod >= 14);
+        Assert.Equal(15, rsi.WarmupPeriod); // RSI warmup is period + 1 = 15
         var candles = TestData.SampleCandles20();
-        for (int i = 0; i < 14; i++)
+        // RSI needs: 1 candle to establish prevClose, then 14 gain/loss values for RMA
+        // First gain/loss is at candle 1, so RMA becomes valid at candle 14 (14th gain/loss)
+        // However, RMA actually becomes valid when it has 14 values, which happens at candle 13
+        // So: candles 0-12 should be invalid, candle 13+ should be valid
+        for (int i = 0; i < 13; i++)
         {
             var r = rsi.Update(candles[i]);
-            if (i < 14)
-                Assert.False(r.IsValid);
+            Assert.False(r.IsValid, $"Candle {i} should be invalid during warmup");
         }
-        var r15 = rsi.Update(candles[14]);
-        Assert.True(r15.IsValid);
+        // Candle 13 should be the first valid one (RMA has 14 values at this point)
+        var r13 = rsi.Update(candles[13]);
+        Assert.True(r13.IsValid, "Candle 13 should be valid after RMA warmup completes");
     }
 
     [Fact]
