@@ -15,6 +15,22 @@ Or via Package Manager:
 Install-Package Bipins.Trading
 ```
 
+## Supported Frameworks
+
+This library targets multiple frameworks for maximum compatibility:
+
+- **.NET Standard 2.1** - Supports:
+  - .NET Framework 4.8+
+  - .NET Core 3.0+
+  - .NET 5+
+- **.NET 6.0** - Modern .NET with full feature support
+- **.NET 7.0** - Latest LTS with required members support
+- **.NET 8.0** - Long-term support version
+- **.NET 9.0** - Latest features and performance improvements
+- **.NET 10.0** - Future-ready with cutting-edge capabilities
+
+The NuGet package will automatically select the appropriate target framework for your project.
+
 ---
 
 ## What Is Implemented

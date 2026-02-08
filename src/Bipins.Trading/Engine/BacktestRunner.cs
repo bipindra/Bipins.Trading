@@ -113,8 +113,8 @@ public sealed class BacktestRunner
 
 public sealed class BacktestConfig
 {
-    public required IReadOnlyList<string> Symbols { get; init; }
-    public required IReadOnlyList<string> Timeframes { get; init; }
+    public IReadOnlyList<string> Symbols { get; init; } = Array.Empty<string>();
+    public IReadOnlyList<string> Timeframes { get; init; } = Array.Empty<string>();
     public DateTime Start { get; init; }
     public DateTime End { get; init; }
     public decimal InitialCash { get; init; } = 100000m;

@@ -1,11 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Target .NET Standard 2.1 for compatibility (supports .NET Framework 4.8+, .NET Core 3.0+, .NET 5+) -->
+    <!-- Target .NET 6+ for modern C# features (record structs, required members) -->
+    <TargetFrameworks>netstandard2.1;net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
+    <ImplicitUsings Condition="'$(TargetFramework)' != 'netstandard2.1'">enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Bipins.Trading</RootNamespace>
     <AssemblyName>Bipins.Trading</AssemblyName>
+    <LangVersion>11.0</LangVersion>
     
     <!-- Package Metadata -->
     <Version>1.0.0</Version>
@@ -24,6 +27,23 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
+
+  <!-- Package references for .NET Standard 2.1 (System.Text.Json not included, needs package) -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
+    <PackageReference Include="System.Text.Json" Version="8.0.4" />
+    <PackageReference Include="IsExternalInit" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+  
+  
+  <!-- Global usings for .NET Standard 2.1 -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
+    <Using Include="System" />
+    <Using Include="System.Collections.Generic" />
+    <Using Include="System.IO" />
+    <Using Include="System.Linq" />
+    <Using Include="System.Threading" />
+    <Using Include="System.Threading.Tasks" />
+  </ItemGroup>
 
   <ItemGroup>
     <None Include="..\..\README.md" Pack="true" PackagePath="\README.md"/>
