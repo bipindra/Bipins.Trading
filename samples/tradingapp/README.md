@@ -1,6 +1,6 @@
 # Trading App Sample
 
-Mobile-first SPA: Vue 3 (Vite) + .NET 8 ASP.NET Core MVC. Robinhood-like UI with watchlist, stock search via Alpaca API, settings, price alerts, and notifications. Alerts are evaluated in the background; when a trigger fires, a one-shot notification is created and optional desktop notifications can be shown.
+Mobile-first SPA: Vue 3 (Vite) + .NET 8 ASP.NET Core MVC. UI with watchlist, stock search via Alpaca API, settings, price alerts, and notifications. Alerts are evaluated in the background; when a trigger fires, a one-shot notification is created and optional desktop notifications can be shown.
 
 ## Prerequisites
 
