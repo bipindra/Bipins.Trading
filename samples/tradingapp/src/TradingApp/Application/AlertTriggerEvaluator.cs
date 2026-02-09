@@ -17,6 +17,9 @@ public static class AlertTriggerEvaluator
     private const double DefaultOversold = 30;
     private const double DefaultOverbought = 70;
 
+    // Store previous RSI values for crossover detection
+    private static readonly Dictionary<int, double?> PreviousRsiValues = new();
+
     public static bool ShouldTrigger(Alert alert, decimal? currentPrice, IReadOnlyList<DomainCandle>? candles = null)
     {
         if (alert.AlertType == AlertType.RsiOversold || alert.AlertType == AlertType.RsiOverbought)
@@ -25,16 +28,57 @@ public static class AlertTriggerEvaluator
             var (period, oversold, overbought) = ParseRsiPayload(alert.Payload);
             var rsi = ComputeRsi(candles, period);
             if (!rsi.HasValue) return false;
+
+            // Use threshold from alert if provided, otherwise use parsed defaults
+            var threshold = alert.Threshold.HasValue ? (double)alert.Threshold.Value : 
+                (alert.AlertType == AlertType.RsiOversold ? oversold : overbought);
+
+            // Get previous RSI value for crossover detection
+            var previousRsi = PreviousRsiValues.GetValueOrDefault(alert.Id);
+
+            // Determine comparison logic
+            if (alert.ComparisonType.HasValue)
+            {
+                return alert.ComparisonType.Value switch
+                {
+                    ComparisonType.Above => rsi.Value > threshold,
+                    ComparisonType.Below => rsi.Value < threshold,
+                    ComparisonType.CrossesOver => previousRsi.HasValue && previousRsi.Value <= threshold && rsi.Value > threshold,
+                    ComparisonType.CrossesBelow => previousRsi.HasValue && previousRsi.Value >= threshold && rsi.Value < threshold,
+                    _ => false
+                };
+            }
+
+            // Default behavior (backward compatible)
             return alert.AlertType == AlertType.RsiOversold
-                ? rsi.Value <= oversold
-                : rsi.Value >= overbought;
+                ? rsi.Value <= threshold
+                : rsi.Value >= threshold;
         }
 
         if (currentPrice == null) return false;
         if (alert.AlertType == AlertType.PriceAbove || alert.AlertType == AlertType.PriceBelow)
         {
-            if (string.IsNullOrWhiteSpace(alert.Payload)) return false;
-            if (!decimal.TryParse(alert.Payload.Trim(), out var threshold)) return false;
+            // Use threshold from alert if provided, otherwise parse from payload
+            var threshold = alert.Threshold ?? 
+                (string.IsNullOrWhiteSpace(alert.Payload) || !decimal.TryParse(alert.Payload.Trim(), out var parsed) 
+                    ? 0m : parsed);
+            
+            if (threshold == 0m) return false;
+
+            // Support comparison type for price alerts too
+            if (alert.ComparisonType.HasValue)
+            {
+                return alert.ComparisonType.Value switch
+                {
+                    ComparisonType.Above => currentPrice > threshold,
+                    ComparisonType.Below => currentPrice < threshold,
+                    ComparisonType.CrossesOver => currentPrice >= threshold, // Simplified for price
+                    ComparisonType.CrossesBelow => currentPrice <= threshold, // Simplified for price
+                    _ => false
+                };
+            }
+
+            // Default behavior (backward compatible)
             return alert.AlertType == AlertType.PriceAbove
                 ? currentPrice >= threshold
                 : currentPrice <= threshold;
@@ -43,18 +87,44 @@ public static class AlertTriggerEvaluator
         return false;
     }
 
+    // Call this after evaluating to store RSI for next evaluation
+    public static void StoreRsiValue(Alert alert, double? rsiValue)
+    {
+        if (rsiValue.HasValue)
+            PreviousRsiValues[alert.Id] = rsiValue.Value;
+    }
+
     public static string GetMessage(Alert alert, decimal price, double? rsiValue = null)
     {
+        var thresholdStr = alert.Threshold.HasValue 
+            ? (alert.AlertType == AlertType.RsiOversold || alert.AlertType == AlertType.RsiOverbought 
+                ? alert.Threshold.Value.ToString("F1") 
+                : alert.Threshold.Value.ToString("F2"))
+            : alert.Payload ?? "threshold";
+        
+        var comparisonStr = alert.ComparisonType.HasValue
+            ? alert.ComparisonType.Value switch
+            {
+                ComparisonType.Above => "above",
+                ComparisonType.Below => "below",
+                ComparisonType.CrossesOver => "crossed over",
+                ComparisonType.CrossesBelow => "crossed below",
+                _ => ""
+            }
+            : "";
+        
+        var timeframeStr = !string.IsNullOrEmpty(alert.Timeframe) ? $" ({alert.Timeframe})" : "";
+        
         return alert.AlertType switch
         {
-            AlertType.PriceAbove => $"{alert.Symbol} reached ${price:F2} (above {alert.Payload})",
-            AlertType.PriceBelow => $"{alert.Symbol} reached ${price:F2} (below {alert.Payload})",
+            AlertType.PriceAbove => $"{alert.Symbol} reached ${price:F2} {comparisonStr} {thresholdStr}",
+            AlertType.PriceBelow => $"{alert.Symbol} reached ${price:F2} {comparisonStr} {thresholdStr}",
             AlertType.RsiOversold => rsiValue.HasValue
-                ? $"{alert.Symbol} RSI oversold at {rsiValue.Value:F1} (${price:F2})"
-                : $"{alert.Symbol} RSI oversold at ${price:F2}",
+                ? $"{alert.Symbol} RSI {comparisonStr} {thresholdStr} at {rsiValue.Value:F1}{timeframeStr} (${price:F2})"
+                : $"{alert.Symbol} RSI oversold at ${price:F2}{timeframeStr}",
             AlertType.RsiOverbought => rsiValue.HasValue
-                ? $"{alert.Symbol} RSI overbought at {rsiValue.Value:F1} (${price:F2})"
-                : $"{alert.Symbol} RSI overbought at ${price:F2}",
+                ? $"{alert.Symbol} RSI {comparisonStr} {thresholdStr} at {rsiValue.Value:F1}{timeframeStr} (${price:F2})"
+                : $"{alert.Symbol} RSI overbought at ${price:F2}{timeframeStr}",
             _ => $"{alert.Symbol} alert triggered at ${price:F2}"
         };
     }
@@ -74,7 +144,7 @@ public static class AlertTriggerEvaluator
         return last.IsValid ? last.Value : (double?)null;
     }
 
-    private static (int period, double oversold, double overbought) ParseRsiPayload(string? payload)
+    public static (int period, double oversold, double overbought) ParseRsiPayload(string? payload)
     {
         if (string.IsNullOrWhiteSpace(payload))
             return (DefaultRsiPeriod, DefaultOversold, DefaultOverbought);

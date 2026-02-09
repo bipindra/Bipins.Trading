@@ -107,19 +107,35 @@ public sealed class AlpacaService : IAlpacaService
     {
         var settings = await GetSettingsOrThrowAsync(ct);
         var normalized = symbol.Trim().ToUpperInvariant();
+        _logger.LogInformation("Fetching latest price for {Symbol}", normalized);
+        
         var client = _httpClientFactory.CreateClient("Alpaca");
         client.Timeout = TimeSpan.FromSeconds(10);
         var dataApiBase = "https://data.alpaca.markets";
         try
         {
+            _logger.LogDebug("Trying quote endpoint for {Symbol}", normalized);
             var price = await GetLatestPriceFromQuoteAsync(client, settings, dataApiBase, normalized, ct);
-            if (price.HasValue) return price;
+            if (price.HasValue)
+            {
+                _logger.LogInformation("Quote received for {Symbol}: ${Price:F2}", normalized, price.Value);
+                return price;
+            }
+            _logger.LogDebug("Quote endpoint returned no price, trying snapshot for {Symbol}", normalized);
             price = await GetLatestPriceFromSnapshotAsync(client, settings, dataApiBase, normalized, ct);
+            if (price.HasValue)
+            {
+                _logger.LogInformation("Snapshot price received for {Symbol}: ${Price:F2}", normalized, price.Value);
+            }
+            else
+            {
+                _logger.LogWarning("No price available for {Symbol} from either quote or snapshot", normalized);
+            }
             return price;
         }
         catch (Exception ex)
         {
-            _logger.LogDebug(ex, "Alpaca latest price failed for {Symbol}", symbol);
+            _logger.LogError(ex, "Alpaca latest price failed for {Symbol}", symbol);
             return null;
         }
     }

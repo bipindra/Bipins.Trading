@@ -57,6 +57,9 @@ export const api = {
     },
     create(data) {
       return request('/alerts', { method: 'POST', body: JSON.stringify(data) })
+    },
+    delete(id) {
+      return request(`/alerts/${id}`, { method: 'DELETE' })
     }
   },
   notifications: {
@@ -67,6 +70,32 @@ export const api = {
     },
     markRead(id) {
       return request(`/notifications/${id}/read`, { method: 'PATCH' })
+    }
+  },
+  trades: {
+    execute(data) {
+      return request('/trades', { method: 'POST', body: JSON.stringify(data) })
+    },
+    getIntradayBars(symbol, timeframe = '1Min') {
+      return request(`/trades/${encodeURIComponent(symbol)}/intraday?timeframe=${encodeURIComponent(timeframe)}`)
+    }
+  },
+  signals: {
+    get(symbol, strategy = null) {
+      const url = strategy
+        ? `/signals/${encodeURIComponent(symbol)}?strategy=${encodeURIComponent(strategy)}`
+        : `/signals/${encodeURIComponent(symbol)}`
+      return request(url)
+    }
+  },
+  activityLogs: {
+    get(limit = 100, category = null) {
+      const params = new URLSearchParams({ limit: String(limit) })
+      if (category) params.set('category', category)
+      return request(`/activity-logs?${params}`)
+    },
+    deleteAll() {
+      return request('/activity-logs', { method: 'DELETE' })
     }
   }
 }

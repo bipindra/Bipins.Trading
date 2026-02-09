@@ -1,3 +1,4 @@
+using System.Data.Common;
 using Bipins.Trading.Engine;
 using Bipins.Trading.Execution;
 using Microsoft.AspNetCore.DataProtection;
@@ -13,6 +14,10 @@ using TradingApp.Web.Infrastructure;
 using TradingApp.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure logging to exclude Microsoft.* logs from console
+builder.Logging.AddFilter("Microsoft.*", LogLevel.None);
+builder.Logging.AddFilter("System.*", LogLevel.Warning); // Only show warnings and above for System.*
 
 builder.Services.AddControllers(o => o.Filters.Add<ValidationErrorFilter>());
 builder.Services.Configure<RouteOptions>(o =>
@@ -39,19 +44,18 @@ builder.Services.AddSignalR();
 builder.Services.AddHostedService<AlertWatchHostedService>();
 builder.Services.AddHostedService<WatchlistPricePushService>();
 
-// Optional: execute live order when an alert triggers (Bipins.Trading + Alpaca)
-var executeOnTrigger = builder.Configuration.GetValue<bool>("Trading:ExecuteOnTrigger");
-if (executeOnTrigger)
-{
-    builder.Services.AddSingleton<IFillReceiver, TradingAppFillReceiver>();
-    builder.Services.AddSingleton<IExecutionAdapter>(sp =>
-        new LiveAlpacaExecutionAdapter(
-            sp.GetRequiredService<IHttpClientFactory>(),
-            sp.GetRequiredService<IAlpacaSettingsRepository>(),
-            sp.GetRequiredService<IFillReceiver>(),
-            sp.GetRequiredService<ILogger<LiveAlpacaExecutionAdapter>>()));
-    builder.Services.AddScoped<IExecutionEngine, BipinsExecutionEngine>();
-}
+// Register execution adapter for manual trading (always available)
+builder.Services.AddSingleton<IFillReceiver, TradingAppFillReceiver>();
+builder.Services.AddSingleton<IExecutionAdapter>(sp =>
+    new LiveAlpacaExecutionAdapter(
+        sp.GetRequiredService<IHttpClientFactory>(),
+        sp.GetRequiredService<IAlpacaSettingsRepository>(),
+        sp.GetRequiredService<IFillReceiver>(),
+        sp.GetRequiredService<ILogger<LiveAlpacaExecutionAdapter>>()));
+
+// Register execution engine for auto-execute when alerts trigger
+// This allows alerts with EnableAutoExecute=true to automatically execute trades
+builder.Services.AddScoped<IExecutionEngine, BipinsExecutionEngine>();
 
 // Named HttpClient for Alpaca with retry (2 retries, 200ms delay)
 builder.Services.AddHttpClient("Alpaca")
@@ -63,10 +67,96 @@ var app = builder.Build();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
+// Apply pending migrations on startup
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await db.Database.MigrateAsync();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    
+    try
+    {
+        await db.Database.MigrateAsync();
+        logger.LogInformation("Database migrations applied successfully");
+        
+        // One-time fix: Add missing columns if migrations were marked as applied but columns don't exist
+        // This handles the case where migration history says it's applied but columns are missing
+        try
+        {
+            var connection = db.Database.GetDbConnection();
+            await connection.OpenAsync();
+            using var checkCommand = connection.CreateCommand();
+            checkCommand.CommandText = "PRAGMA table_info(Alerts)";
+            using var reader = await checkCommand.ExecuteReaderAsync();
+            var columns = new List<string>();
+            while (await reader.ReadAsync())
+            {
+                columns.Add(reader.GetString(1));
+            }
+            await reader.CloseAsync();
+            
+            if (!columns.Contains("ComparisonType"))
+            {
+                logger.LogWarning("ComparisonType column missing despite migrations. Adding it manually...");
+                await db.Database.ExecuteSqlRawAsync("ALTER TABLE Alerts ADD COLUMN ComparisonType INTEGER");
+            }
+            if (!columns.Contains("Threshold"))
+            {
+                logger.LogWarning("Threshold column missing despite migrations. Adding it manually...");
+                await db.Database.ExecuteSqlRawAsync("ALTER TABLE Alerts ADD COLUMN Threshold TEXT");
+            }
+            if (!columns.Contains("Timeframe"))
+            {
+                logger.LogWarning("Timeframe column missing despite migrations. Adding it manually...");
+                await db.Database.ExecuteSqlRawAsync("ALTER TABLE Alerts ADD COLUMN Timeframe TEXT");
+            }
+            if (!columns.Contains("EnableAutoExecute"))
+            {
+                logger.LogWarning("EnableAutoExecute column missing despite migrations. Adding it manually...");
+                await db.Database.ExecuteSqlRawAsync("ALTER TABLE Alerts ADD COLUMN EnableAutoExecute INTEGER NOT NULL DEFAULT 0");
+            }
+            if (!columns.Contains("OrderQuantity"))
+            {
+                logger.LogWarning("OrderQuantity column missing despite migrations. Adding it manually...");
+                await db.Database.ExecuteSqlRawAsync("ALTER TABLE Alerts ADD COLUMN OrderQuantity TEXT");
+            }
+            if (!columns.Contains("OrderType"))
+            {
+                logger.LogWarning("OrderType column missing despite migrations. Adding it manually...");
+                await db.Database.ExecuteSqlRawAsync("ALTER TABLE Alerts ADD COLUMN OrderType INTEGER");
+            }
+            if (!columns.Contains("OrderSideOverride"))
+            {
+                logger.LogWarning("OrderSideOverride column missing despite migrations. Adding it manually...");
+                await db.Database.ExecuteSqlRawAsync("ALTER TABLE Alerts ADD COLUMN OrderSideOverride INTEGER");
+            }
+            if (!columns.Contains("OrderLimitPrice"))
+            {
+                logger.LogWarning("OrderLimitPrice column missing despite migrations. Adding it manually...");
+                await db.Database.ExecuteSqlRawAsync("ALTER TABLE Alerts ADD COLUMN OrderLimitPrice TEXT");
+            }
+            if (!columns.Contains("OrderStopPrice"))
+            {
+                logger.LogWarning("OrderStopPrice column missing despite migrations. Adding it manually...");
+                await db.Database.ExecuteSqlRawAsync("ALTER TABLE Alerts ADD COLUMN OrderStopPrice TEXT");
+            }
+            if (!columns.Contains("OrderTimeInForce"))
+            {
+                logger.LogWarning("OrderTimeInForce column missing despite migrations. Adding it manually...");
+                await db.Database.ExecuteSqlRawAsync("ALTER TABLE Alerts ADD COLUMN OrderTimeInForce INTEGER");
+            }
+            
+            await connection.CloseAsync();
+        }
+        catch (Exception fixEx)
+        {
+            logger.LogWarning(fixEx, "Failed to check/add missing columns, but continuing anyway");
+        }
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Failed to apply database migrations: {Error}", ex.Message);
+        throw; // Re-throw to prevent app from starting with invalid database state
+    }
 }
 
 if (app.Environment.IsDevelopment())
@@ -87,6 +177,7 @@ app.UseRouting();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHub<WatchlistPriceHub>("/hubs/watchlist-price");
+app.MapHub<ActivityLogHub>("/hubs/activity-log");
 
 if (Directory.Exists(clientDist))
 {

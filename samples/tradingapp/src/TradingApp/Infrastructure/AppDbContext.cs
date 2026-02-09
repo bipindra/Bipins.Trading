@@ -11,6 +11,7 @@ public class AppDbContext : DbContext
     public DbSet<AlpacaSettings> AlpacaSettings => Set<AlpacaSettings>();
     public DbSet<Alert> Alerts => Set<Alert>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -34,6 +35,15 @@ public class AppDbContext : DbContext
             e.HasKey(x => x.Id);
             e.Property(x => x.Symbol).IsRequired().HasMaxLength(32);
             e.Property(x => x.Payload).HasMaxLength(2000);
+            e.Property(x => x.Threshold).HasColumnType("TEXT");
+            e.Property(x => x.ComparisonType).HasConversion<int>();
+            e.Property(x => x.Timeframe).HasMaxLength(16);
+            e.Property(x => x.OrderQuantity).HasColumnType("TEXT");
+            e.Property(x => x.OrderType).HasConversion<int>();
+            e.Property(x => x.OrderSideOverride).HasConversion<int>();
+            e.Property(x => x.OrderLimitPrice).HasColumnType("TEXT");
+            e.Property(x => x.OrderStopPrice).HasColumnType("TEXT");
+            e.Property(x => x.OrderTimeInForce).HasConversion<int>();
         });
 
         modelBuilder.Entity<Notification>(e =>
@@ -41,6 +51,19 @@ public class AppDbContext : DbContext
             e.HasKey(x => x.Id);
             e.Property(x => x.Symbol).IsRequired().HasMaxLength(32);
             e.Property(x => x.Message).HasMaxLength(500);
+        });
+
+        modelBuilder.Entity<ActivityLog>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Level).IsRequired().HasMaxLength(20);
+            e.Property(x => x.Category).IsRequired().HasMaxLength(50);
+            e.Property(x => x.Symbol).HasMaxLength(32);
+            e.Property(x => x.AlertId).HasMaxLength(50);
+            e.Property(x => x.Message).IsRequired().HasMaxLength(1000);
+            e.Property(x => x.Details).HasMaxLength(5000);
+            e.HasIndex(x => x.Timestamp);
+            e.HasIndex(x => x.Category);
         });
     }
 }

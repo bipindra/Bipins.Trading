@@ -16,6 +16,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IAlpacaSettingsRepository, InMemoryAlpacaSettingsRepository>();
         services.AddScoped<IAlertRepository, AlertRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<IActivityLogRepository, ActivityLogRepository>();
         return services;
     }
 }

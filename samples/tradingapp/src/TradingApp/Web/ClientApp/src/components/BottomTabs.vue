@@ -9,6 +9,9 @@
     <router-link to="/notifications" class="tab" :class="{ active: activeTab === 'notifications' }" aria-label="Notifications">
       <BellIcon class="icon" />
     </router-link>
+    <router-link to="/monitoring" class="tab" :class="{ active: activeTab === 'monitoring' }" aria-label="Monitoring">
+      <ChartBarIcon class="icon" />
+    </router-link>
     <router-link to="/settings" class="tab" :class="{ active: activeTab === 'settings' }" aria-label="Settings">
       <Cog6ToothIcon class="icon" />
     </router-link>
@@ -18,7 +21,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { HomeIcon, MagnifyingGlassIcon, BellIcon, Cog6ToothIcon } from '@heroicons/vue/24/outline'
+import { HomeIcon, MagnifyingGlassIcon, BellIcon, ChartBarIcon, Cog6ToothIcon } from '@heroicons/vue/24/outline'
 
 const route = useRoute()
 const activeTab = computed(() => route.meta?.tab ?? null)

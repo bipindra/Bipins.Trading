@@ -8,9 +8,12 @@ public static class ApplicationServiceCollectionExtensions
     {
         services.AddHttpClient();
         services.AddScoped<IAlpacaService, AlpacaService>();
+        services.AddScoped<ISignalService, SignalService>();
         services.AddScoped<WatchlistService>();
         services.AddScoped<SettingsService>();
-        services.AddScoped<AlertService>();
+        services.AddScoped<AlertService>(sp => new AlertService(
+            sp.GetRequiredService<IAlertRepository>(),
+            sp.GetService<IActivityLogRepository>()));
         services.AddScoped<NotificationService>();
         return services;
     }

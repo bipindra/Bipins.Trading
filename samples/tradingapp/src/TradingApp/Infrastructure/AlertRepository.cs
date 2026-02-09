@@ -44,4 +44,13 @@ public sealed class AlertRepository : IAlertRepository
             await _db.SaveChangesAsync(ct);
         }
     }
+
+    public async Task<bool> DeleteAsync(int alertId, CancellationToken ct = default)
+    {
+        var alert = await _db.Alerts.FirstOrDefaultAsync(x => x.Id == alertId, ct);
+        if (alert == null) return false;
+        _db.Alerts.Remove(alert);
+        await _db.SaveChangesAsync(ct);
+        return true;
+    }
 }

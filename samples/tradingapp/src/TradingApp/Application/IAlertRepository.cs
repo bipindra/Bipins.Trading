@@ -8,4 +8,5 @@ public interface IAlertRepository
     Task<IReadOnlyList<Alert>> GetBySymbolAsync(string symbol, CancellationToken ct = default);
     Task<IReadOnlyList<Alert>> GetAllAsync(CancellationToken ct = default);
     Task SetTriggeredAtAsync(int alertId, DateTime triggeredAt, CancellationToken ct = default);
+    Task<bool> DeleteAsync(int alertId, CancellationToken ct = default);
 }
