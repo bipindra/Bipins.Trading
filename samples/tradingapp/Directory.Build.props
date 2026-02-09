@@ -1,0 +1,6 @@
+<Project>
+  <!-- When building the tradingapp sample, restrict Bipins.Trading to net8.0 so the sample builds with .NET 8 SDK -->
+  <PropertyGroup>
+    <BuildNet8Only>true</BuildNet8Only>
+  </PropertyGroup>
+</Project>

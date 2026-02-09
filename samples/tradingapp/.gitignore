@@ -1,0 +1,12 @@
+# SQLite
+*.db
+*.db-shm
+*.db-wal
+
+# Vue/Node
+node_modules/
+src/TradingApp/Web/ClientApp/node_modules/
+src/TradingApp/Web/ClientApp/dist/
+
+# User secrets (do not commit)
+**/secrets.json

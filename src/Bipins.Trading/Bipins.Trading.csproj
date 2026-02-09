@@ -3,7 +3,9 @@
   <PropertyGroup>
     <!-- Target .NET Standard 2.1 for compatibility (supports .NET Framework 4.8+, .NET Core 3.0+, .NET 5+) -->
     <!-- Target .NET 6+ for modern C# features (record structs, required members) -->
-    <TargetFrameworks>netstandard2.1;net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
+    <!-- When BuildNet8Only=true (e.g. from samples/tradingapp), skip net9.0+ so .NET 8 SDK can build -->
+    <TargetFrameworks Condition="'$(BuildNet8Only)' == 'true'">netstandard2.1;net6.0;net7.0;net8.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(BuildNet8Only)' != 'true'">netstandard2.1;net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
     <ImplicitUsings Condition="'$(TargetFramework)' != 'netstandard2.1'">enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Bipins.Trading</RootNamespace>

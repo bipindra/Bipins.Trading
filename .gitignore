@@ -44,6 +44,13 @@ artifacts/
 # Generated
 signals.json
 
+# Node
+node_modules/
+
+# TradingApp sample
+**/dp-keys/
+tradingapp.db
+
 # Misc
 *.log
 *.tmp

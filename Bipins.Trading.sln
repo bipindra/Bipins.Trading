@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
@@ -14,6 +14,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "alpaca", "alpaca", "{D509E6A5-7897-D087-2A4E-7DBF33798E5F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bipins.Trading.Samples.Alpaca", "samples\alpaca\Bipins.Trading.Samples.Alpaca.csproj", "{4D084234-DF28-499D-B570-EEFF1DD4496A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tradingapp", "tradingapp", "{E1000001-0001-0001-0001-000000000001}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TradingApp", "samples\tradingapp\src\TradingApp\TradingApp.csproj", "{A1000000-0000-0000-0000-000000000001}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
 EndProject
@@ -89,6 +93,10 @@ Global
 		{31D0E1F4-6383-4850-9937-E9E1CB7AFDD8}.Release|x64.Build.0 = Release|Any CPU
 		{31D0E1F4-6383-4850-9937-E9E1CB7AFDD8}.Release|x86.ActiveCfg = Release|Any CPU
 		{31D0E1F4-6383-4850-9937-E9E1CB7AFDD8}.Release|x86.Build.0 = Release|Any CPU
+		{A1000000-0000-0000-0000-000000000001}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1000000-0000-0000-0000-000000000001}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1000000-0000-0000-0000-000000000001}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1000000-0000-0000-0000-000000000001}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -96,6 +104,8 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{D509E6A5-7897-D087-2A4E-7DBF33798E5F} = {5D20AA90-6969-D8BD-9DCD-8634F4692FDA}
 		{4D084234-DF28-499D-B570-EEFF1DD4496A} = {D509E6A5-7897-D087-2A4E-7DBF33798E5F}
+		{E1000001-0001-0001-0001-000000000001} = {5D20AA90-6969-D8BD-9DCD-8634F4692FDA}
+		{A1000000-0000-0000-0000-000000000001} = {E1000001-0001-0001-0001-000000000001}
 		{31D0E1F4-6383-4850-9937-E9E1CB7AFDD8} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal
