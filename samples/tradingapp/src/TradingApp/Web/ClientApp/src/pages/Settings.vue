@@ -18,7 +18,7 @@
         v-model="form.baseUrl"
         type="url"
         class="input"
-        placeholder="https://paper-api.alpaca.markets"
+        placeholder="https://api.alpaca.markets"
       />
       <button type="submit" class="btn" :disabled="saving">
         {{ saving ? 'Saving...' : 'Save' }}
@@ -36,7 +36,7 @@ const toast = useToastStore()
 const form = ref({
   apiKey: '',
   apiSecret: '',
-  baseUrl: 'https://paper-api.alpaca.markets'
+  baseUrl: 'https://api.alpaca.markets'
 })
 const hasExistingSecret = ref(false)
 const saving = ref(false)

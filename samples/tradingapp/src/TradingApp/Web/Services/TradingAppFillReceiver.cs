@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 namespace TradingApp.Web.Services;
 
 /// <summary>
-/// Receives paper fills from Bipins.Trading PaperExecutionAdapter, logs them, and publishes FillEvent to IEventBus.
+/// Receives fills from the live execution adapter, logs them, and publishes FillEvent to IEventBus.
 /// </summary>
 public sealed class TradingAppFillReceiver : IFillReceiver
 {
@@ -23,7 +23,7 @@ public sealed class TradingAppFillReceiver : IFillReceiver
     public void OnFill(Fill fill)
     {
         _logger.LogInformation(
-            "Paper fill: {Side} {Quantity} {Symbol} @ {Price:F2} (fees: {Fees:F2})",
+            "Live fill: {Side} {Quantity} {Symbol} @ {Price:F2} (fees: {Fees:F2})",
             fill.Side, fill.Quantity, fill.Symbol, fill.Price, fill.Fees);
 
         _eventBus?.Publish(new FillEvent(fill.Time, fill));

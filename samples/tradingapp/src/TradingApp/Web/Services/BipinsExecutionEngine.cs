@@ -7,8 +7,8 @@ using TradingApp.Domain;
 namespace TradingApp.Web.Services;
 
 /// <summary>
-/// When an alert triggers, submits a paper order via Bipins.Trading (Market, 1 share at trigger price).
-/// Direction: PriceAbove -> Buy, PriceBelow -> Sell (notify-only semantics; configurable later).
+/// When an alert triggers, submits a live order via the Alpaca Trading API (Market, 1 share at trigger price).
+/// Direction: PriceAbove -> Buy, PriceBelow -> Sell.
 /// </summary>
 public sealed class BipinsExecutionEngine : IExecutionEngine
 {
@@ -41,7 +41,7 @@ public sealed class BipinsExecutionEngine : IExecutionEngine
             Metrics: null,
             ClientOrderId: $"alert-{alert.Id}-{DateTime.UtcNow:yyyyMMddHHmmss}");
 
-        _logger.LogInformation("Executing paper order: {Side} {Quantity} {Symbol} @ {Price}", side, 1m, alert.Symbol, triggerPrice);
+        _logger.LogInformation("Executing live order: {Side} {Quantity} {Symbol} @ {Price}", side, 1m, alert.Symbol, triggerPrice);
         return _adapter.SubmitAsync(intent, ct);
     }
 }

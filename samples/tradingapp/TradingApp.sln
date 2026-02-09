@@ -1,9 +1,10 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TradingApp", "src\TradingApp\TradingApp.csproj", "{A1000000-0000-0000-0000-000000000001}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bipins.Trading", "..\..\..\AI\Bipins.Trading\Bipins.AI.Trading.Core\src\Bipins.Trading\Bipins.Trading.csproj", "{74443646-5154-4165-61A3-6F8D46EB4218}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,5 +16,12 @@ Global
 		{A1000000-0000-0000-0000-000000000001}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A1000000-0000-0000-0000-000000000001}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A1000000-0000-0000-0000-000000000001}.Release|Any CPU.Build.0 = Release|Any CPU
+		{74443646-5154-4165-61A3-6F8D46EB4218}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{74443646-5154-4165-61A3-6F8D46EB4218}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{74443646-5154-4165-61A3-6F8D46EB4218}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{74443646-5154-4165-61A3-6F8D46EB4218}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 EndGlobal

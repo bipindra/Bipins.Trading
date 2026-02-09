@@ -8,6 +8,7 @@
         </router-link>
         <div class="symbol">{{ stock.symbol }}</div>
         <div v-if="stock.name" class="name">{{ stock.name }}</div>
+        <div v-if="stock.latestPrice != null" class="price">${{ Number(stock.latestPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div>
       </div>
 
       <section class="section">
@@ -132,6 +133,13 @@ function onAlertCreated() {
   font-size: 15px;
   color: var(--text-muted);
   margin-top: 4px;
+}
+
+.price {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--aqua);
+  margin-top: 8px;
 }
 
 .section {

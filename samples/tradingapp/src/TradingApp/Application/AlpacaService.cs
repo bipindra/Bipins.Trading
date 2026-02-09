@@ -45,7 +45,7 @@ public sealed class AlpacaService : IAlpacaService
         var settings = await GetSettingsOrThrowAsync(ct);
 
         var baseUrl = (settings.BaseUrl ?? "").TrimEnd('/');
-        if (string.IsNullOrEmpty(baseUrl)) baseUrl = "https://paper-api.alpaca.markets";
+        if (string.IsNullOrEmpty(baseUrl)) baseUrl = "https://api.alpaca.markets";
 
         var client = _httpClientFactory.CreateClient("Alpaca");
         client.Timeout = TimeSpan.FromSeconds(10);
@@ -79,7 +79,7 @@ public sealed class AlpacaService : IAlpacaService
         var settings = await GetSettingsOrThrowAsync(ct);
 
         var baseUrl = (settings.BaseUrl ?? "").TrimEnd('/');
-        if (string.IsNullOrEmpty(baseUrl)) baseUrl = "https://paper-api.alpaca.markets";
+        if (string.IsNullOrEmpty(baseUrl)) baseUrl = "https://api.alpaca.markets";
 
         var normalized = symbol.Trim().ToUpperInvariant();
         var client = _httpClientFactory.CreateClient("Alpaca");

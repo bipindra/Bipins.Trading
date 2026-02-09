@@ -33,7 +33,8 @@ public class StocksController : ControllerBase
         var detail = await _alpacaService.GetAssetAsync(symbol.Trim(), ct);
         if (detail == null)
             return NotFound();
-        return Ok(detail);
+        var price = await _alpacaService.GetLatestPriceAsync(symbol.Trim(), ct);
+        return Ok(detail with { LatestPrice = price });
     }
 }
 

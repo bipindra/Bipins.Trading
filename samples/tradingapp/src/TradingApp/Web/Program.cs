@@ -39,12 +39,17 @@ builder.Services.AddSignalR();
 builder.Services.AddHostedService<AlertWatchHostedService>();
 builder.Services.AddHostedService<WatchlistPricePushService>();
 
-// Optional: execute paper order when an alert triggers (Bipins.Trading)
+// Optional: execute live order when an alert triggers (Bipins.Trading + Alpaca)
 var executeOnTrigger = builder.Configuration.GetValue<bool>("Trading:ExecuteOnTrigger");
 if (executeOnTrigger)
 {
     builder.Services.AddSingleton<IFillReceiver, TradingAppFillReceiver>();
-    builder.Services.AddSingleton<IExecutionAdapter>(sp => new PaperExecutionAdapter(sp.GetRequiredService<IFillReceiver>()));
+    builder.Services.AddSingleton<IExecutionAdapter>(sp =>
+        new LiveAlpacaExecutionAdapter(
+            sp.GetRequiredService<IHttpClientFactory>(),
+            sp.GetRequiredService<IAlpacaSettingsRepository>(),
+            sp.GetRequiredService<IFillReceiver>(),
+            sp.GetRequiredService<ILogger<LiveAlpacaExecutionAdapter>>()));
     builder.Services.AddScoped<IExecutionEngine, BipinsExecutionEngine>();
 }
 
