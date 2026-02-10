@@ -1,26 +1,256 @@
-# Trading App Sample
+# Trading App
 
-Mobile-first SPA: Vue 3 (Vite) + .NET 8 ASP.NET Core MVC. UI with watchlist, stock search via Alpaca API, settings, price alerts, and notifications. Alerts are evaluated in the background; when a trigger fires, a one-shot notification is created and optional desktop notifications can be shown.
+A modern, mobile-first trading application built with Vue 3 and .NET 8. Features real-time stock monitoring, price alerts, watchlist management, and automated trading execution using the Bipins.Trading library.
+
+## Features
+
+- 📊 **Stock Search & Details** - Search and view stock information via Alpaca API
+- 📈 **Watchlist** - Track favorite stocks with real-time price updates via SignalR
+- 🔔 **Price Alerts** - Set alerts for price thresholds and RSI indicators
+- 📱 **Real-time Monitoring** - Activity logs with live SignalR updates
+- 🔐 **Secure Settings** - Encrypted storage of Alpaca API credentials
+- ⚡ **Auto-Execution** - Optional automated trade execution when alerts trigger
+- 🧪 **Unit Tests** - Comprehensive test coverage for services and controllers
+
+## Architecture
+
+```mermaid
+graph TB
+    subgraph "Frontend (Vue 3 + Vite)"
+        UI[Vue Components]
+        API_CLIENT[API Client]
+        SIGNALR_CLIENT[SignalR Client]
+    end
+    
+    subgraph "Backend (.NET 8)"
+        subgraph "Web Layer"
+            CONTROLLERS[API Controllers]
+            HUBS[SignalR Hubs]
+            MIDDLEWARE[Middleware]
+        end
+        
+        subgraph "Application Layer"
+            ALERT_SERVICE[AlertService]
+            WATCHLIST_SERVICE[WatchlistService]
+            SETTINGS_SERVICE[SettingsService]
+            NOTIFICATION_SERVICE[NotificationService]
+            ALPACA_SERVICE[AlpacaService]
+        end
+        
+        subgraph "Background Services"
+            ALERT_WATCH[AlertWatchHostedService]
+            PRICE_PUSH[WatchlistPricePushService]
+        end
+        
+        subgraph "Infrastructure"
+            REPOS[Repositories]
+            DB[(SQLite Database)]
+            ENCRYPTION[Secret Encryption]
+        end
+        
+        subgraph "External Services"
+            ALPACA_API[Alpaca API]
+            BIPINS_LIB[Bipins.Trading Library]
+        end
+    end
+    
+    UI --> API_CLIENT
+    UI --> SIGNALR_CLIENT
+    API_CLIENT --> CONTROLLERS
+    SIGNALR_CLIENT --> HUBS
+    CONTROLLERS --> ALERT_SERVICE
+    CONTROLLERS --> WATCHLIST_SERVICE
+    CONTROLLERS --> SETTINGS_SERVICE
+    CONTROLLERS --> NOTIFICATION_SERVICE
+    ALERT_SERVICE --> REPOS
+    WATCHLIST_SERVICE --> REPOS
+    SETTINGS_SERVICE --> REPOS
+    NOTIFICATION_SERVICE --> REPOS
+    REPOS --> DB
+    ALERT_WATCH --> ALPACA_SERVICE
+    ALERT_WATCH --> REPOS
+    ALERT_WATCH --> BIPINS_LIB
+    PRICE_PUSH --> ALPACA_SERVICE
+    PRICE_PUSH --> HUBS
+    ALPACA_SERVICE --> ALPACA_API
+    ALERT_WATCH --> HUBS
+    SETTINGS_SERVICE --> ENCRYPTION
+```
+
+## How It Works
+
+### Alert Evaluation Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant API
+    participant AlertWatch as AlertWatch Service
+    participant Alpaca
+    participant Evaluator as Alert Evaluator
+    participant DB
+    participant SignalR
+    participant EventBus
+    participant Execution as Execution Engine
+
+    User->>Frontend: Create Alert
+    Frontend->>API: POST /api/alerts
+    API->>DB: Save Alert
+    
+    loop Every 5 seconds
+        AlertWatch->>DB: Get All Active Alerts
+        DB-->>AlertWatch: List of Alerts
+        
+        loop For each alert
+            AlertWatch->>Alpaca: Get Latest Price
+            Alpaca-->>AlertWatch: Current Price
+            
+            alt RSI Alert
+                AlertWatch->>Alpaca: Get Historical Bars
+                Alpaca-->>AlertWatch: Candles
+                AlertWatch->>Evaluator: Evaluate with RSI
+            else Price Alert
+                AlertWatch->>Evaluator: Evaluate Price
+            end
+            
+            alt Alert Triggered
+                Evaluator-->>AlertWatch: Trigger = true
+                AlertWatch->>DB: Create Notification
+                AlertWatch->>DB: Mark Alert as Triggered
+                AlertWatch->>SignalR: Push Activity Log
+                AlertWatch->>EventBus: Publish SignalEvent
+                
+                alt Auto-Execute Enabled
+                    AlertWatch->>Execution: Execute Trade
+                    Execution->>EventBus: Publish FillEvent
+                end
+                
+                SignalR-->>Frontend: Real-time Update
+            end
+        end
+    end
+```
+
+### Data Flow
+
+```mermaid
+flowchart LR
+    subgraph "User Actions"
+        CREATE[Create Alert]
+        ADD[Add to Watchlist]
+        SEARCH[Search Stock]
+        SETTINGS[Configure Settings]
+    end
+    
+    subgraph "API Endpoints"
+        ALERTS_API[/api/alerts]
+        WATCHLIST_API[/api/watchlist]
+        STOCKS_API[/api/stocks]
+        SETTINGS_API[/api/settings]
+    end
+    
+    subgraph "Services"
+        ALERT_SVC[AlertService]
+        WATCHLIST_SVC[WatchlistService]
+        ALPACA_SVC[AlpacaService]
+        SETTINGS_SVC[SettingsService]
+    end
+    
+    subgraph "Data Storage"
+        SQLITE[(SQLite DB)]
+        ENCRYPT[Encrypted Secrets]
+    end
+    
+    subgraph "Real-time"
+        SIGNALR_HUB[SignalR Hubs]
+        ACTIVITY[Activity Logs]
+        PRICES[Price Updates]
+    end
+    
+    CREATE --> ALERTS_API
+    ADD --> WATCHLIST_API
+    SEARCH --> STOCKS_API
+    SETTINGS --> SETTINGS_API
+    
+    ALERTS_API --> ALERT_SVC
+    WATCHLIST_API --> WATCHLIST_SVC
+    STOCKS_API --> ALPACA_SVC
+    SETTINGS_API --> SETTINGS_SVC
+    
+    ALERT_SVC --> SQLITE
+    WATCHLIST_SVC --> SQLITE
+    SETTINGS_SVC --> SQLITE
+    SETTINGS_SVC --> ENCRYPT
+    
+    ALERT_SVC --> SIGNALR_HUB
+    WATCHLIST_SVC --> SIGNALR_HUB
+    SIGNALR_HUB --> ACTIVITY
+    SIGNALR_HUB --> PRICES
+```
+
+### Component Interactions
+
+```mermaid
+graph TD
+    subgraph "Frontend Pages"
+        HOME[Home]
+        SEARCH_PAGE[Search]
+        DETAIL[Stock Detail]
+        WATCHLIST_PAGE[Watchlist]
+        ALERTS_PAGE[Alerts]
+        NOTIFICATIONS_PAGE[Notifications]
+        MONITORING[Activity Monitor]
+        SETTINGS_PAGE[Settings]
+    end
+    
+    subgraph "Backend Services"
+        ALERT_WATCH[AlertWatchHostedService<br/>Runs every 5s]
+        PRICE_PUSH[WatchlistPricePushService<br/>Runs every 15s]
+    end
+    
+    subgraph "SignalR Hubs"
+        ACTIVITY_HUB[ActivityLogHub]
+        PRICE_HUB[WatchlistPriceHub]
+    end
+    
+    subgraph "External"
+        ALPACA[Alpaca API]
+    end
+    
+    HOME --> SEARCH_PAGE
+    HOME --> WATCHLIST_PAGE
+    SEARCH_PAGE --> DETAIL
+    DETAIL --> ALERTS_PAGE
+    WATCHLIST_PAGE --> PRICE_HUB
+    ALERTS_PAGE --> ALERT_WATCH
+    NOTIFICATIONS_PAGE --> ALERT_WATCH
+    MONITORING --> ACTIVITY_HUB
+    SETTINGS_PAGE --> ALPACA
+    
+    ALERT_WATCH --> ALPACA
+    ALERT_WATCH --> ACTIVITY_HUB
+    PRICE_PUSH --> ALPACA
+    PRICE_PUSH --> PRICE_HUB
+    
+    ACTIVITY_HUB -.->|Real-time| MONITORING
+    PRICE_HUB -.->|Real-time| WATCHLIST_PAGE
+```
 
 ## Prerequisites
 
 - .NET 8 SDK
 - Node.js 18+ and npm (for frontend build and optional dev server)
 
-## Quick start
-
-Target framework: **.NET 8**. Requires .NET 8 SDK.
+## Quick Start
 
 ### 1. Build
 
 From the **solution root** (`samples/tradingapp`):
 
 ```bash
-dotnet build src/TradingApp/TradingApp.csproj
+dotnet build TradingApp.sln
 ```
-
-If the build fails with `NETSDK1045` (Bipins.Trading targets .NET 9+), use:  
-`dotnet build src/TradingApp/TradingApp.csproj /p:BuildNet8Only=true`
 
 ### 2. Run
 
@@ -29,20 +259,19 @@ cd src/TradingApp
 dotnet run
 ```
 
-### 3. Apply database migrations (optional)
+The application will:
+- Apply database migrations automatically
+- Start the API server on `http://localhost:5000`
+- Serve the built SPA (if built) or API endpoints
 
-Migrations run automatically on startup. To apply manually:
+### 3. Configure Alpaca API
 
-```bash
-cd src/TradingApp
-dotnet ef database update
-```
+**Option A - Via Settings UI:**
+1. Navigate to the Settings page in the app
+2. Enter your Alpaca API credentials
+3. Settings are encrypted and stored in SQLite
 
-### 4. (Optional) Configure Alpaca API
-
-For stock search and details, configure Alpaca credentials. **Do not commit secrets.**
-
-**Development (user-secrets):**
+**Option B - Via User Secrets (Development):**
 
 ```bash
 cd src/TradingApp
@@ -51,17 +280,17 @@ dotnet user-secrets set "Alpaca:ApiSecret" "YOUR_SECRET"
 dotnet user-secrets set "Alpaca:BaseUrl" "https://paper-api.alpaca.markets"
 ```
 
-Or configure via the **Settings** tab in the app (stored in SQLite, secret encrypted with Data Protection).
+**Option C - Via Environment Variables (Production):**
 
-**Production:** Use environment variables (e.g. `Alpaca__ApiKey`, `Alpaca__ApiSecret`, `Alpaca__BaseUrl`).
+```bash
+export Alpaca__ApiKey="YOUR_KEY"
+export Alpaca__ApiSecret="YOUR_SECRET"
+export Alpaca__BaseUrl="https://paper-api.alpaca.markets"
+```
 
-- API: http://localhost:5000  
-- Swagger (Development): http://localhost:5000/swagger
+### 4. Serve the Frontend
 
-### 5. Serve the SPA
-
-**Option A – Production (built SPA served by backend)**  
-Build the Vue app once, then run the backend:
+**Option A – Production (built SPA served by backend):**
 
 ```bash
 cd src/TradingApp/Web/ClientApp
@@ -73,16 +302,15 @@ dotnet run
 
 Open http://localhost:5000 — the backend serves the built SPA from `Web/ClientApp/dist`.
 
-**Option B – Development (Vite dev server + proxy)**  
-Terminal 1 – backend:
+**Option B – Development (Vite dev server + proxy):**
 
+Terminal 1 – backend:
 ```bash
 cd src/TradingApp
 dotnet run
 ```
 
 Terminal 2 – frontend:
-
 ```bash
 cd src/TradingApp/Web/ClientApp
 npm install
@@ -91,45 +319,112 @@ npm run dev
 
 Open http://localhost:5173 — Vite proxies `/api` to the backend (port 5000). Hot reload works.
 
-## Project layout
+## Project Structure
 
-The sample is a **single project** (`TradingApp`) with folders for layering:
+```
+TradingApp/
+├── Application/          # Business logic and services
+│   ├── AlertService.cs
+│   ├── AlertTriggerEvaluator.cs
+│   ├── AlpacaService.cs
+│   ├── NotificationService.cs
+│   ├── SettingsService.cs
+│   ├── WatchlistService.cs
+│   └── DTOs/            # Data Transfer Objects
+├── Domain/              # Domain entities
+│   ├── Alert.cs
+│   ├── Notification.cs
+│   ├── WatchlistItem.cs
+│   └── AlpacaSettings.cs
+├── Infrastructure/      # Data access and external integrations
+│   ├── Repositories/
+│   ├── AppDbContext.cs
+│   ├── SecretEncryption.cs
+│   └── Migrations/
+├── Web/                 # Web API and frontend
+│   ├── Controllers/     # API controllers
+│   ├── Hubs/           # SignalR hubs
+│   ├── Services/       # Background services
+│   └── ClientApp/      # Vue 3 frontend
+└── TradingApp.Tests/    # Unit tests
+```
 
-- **Domain/** – Entities (WatchlistItem, AlpacaSettings, Alert, AlertType, Notification)
-- **Application/** – IAlpacaService, AlpacaService, DTOs, IAlertEngine (stub), app services
-- **Infrastructure/** – EF Core (SQLite), migrations, SecretEncryption, repositories
-- **Web/** – Program.cs, API controllers, middleware, hosted services; **Web/ClientApp** – Vue 3 + Vite + Vue Router + Pinia (mobile-first, aqua/white theme)
-
-## API summary
+## API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | /api/stocks/search?q= | Search assets (Alpaca) |
-| GET | /api/stocks/{symbol} | Stock detail |
-| GET | /api/watchlist | List watchlist |
-| POST | /api/watchlist | Add symbol |
-| DELETE | /api/watchlist/{symbol} | Remove |
-| GET | /api/settings/alpaca | Masked Alpaca settings |
-| POST | /api/settings/alpaca | Save Alpaca settings |
-| GET | /api/alerts?symbol= | List alerts for symbol |
-| POST | /api/alerts | Create alert |
-| GET | /api/notifications?limit=&unreadOnly= | Recent notifications |
-| PATCH | /api/notifications/{id}/read | Mark notification read |
+| GET | `/api/stocks/search?q=` | Search assets (Alpaca) |
+| GET | `/api/stocks/{symbol}` | Stock detail |
+| GET | `/api/watchlist` | List watchlist |
+| POST | `/api/watchlist` | Add symbol to watchlist |
+| DELETE | `/api/watchlist/{symbol}` | Remove from watchlist |
+| GET | `/api/settings/alpaca` | Get masked Alpaca settings |
+| POST | `/api/settings/alpaca` | Save Alpaca settings |
+| GET | `/api/alerts?symbol=` | List alerts for symbol |
+| POST | `/api/alerts` | Create alert |
+| DELETE | `/api/alerts/{id}` | Delete alert |
+| GET | `/api/notifications?limit=&unreadOnly=` | Recent notifications |
+| PATCH | `/api/notifications/{id}/read` | Mark notification as read |
+| GET | `/api/activity-logs?limit=&category=` | Get activity logs |
+| DELETE | `/api/activity-logs` | Delete all activity logs |
 
-**Error responses:** `400` and `500` return JSON `{ "message": "...", "errors": ["..."]? }`. Validation uses the same shape.
+**Swagger UI (Development):** http://localhost:5000/swagger
 
-## Background alert watcher
+## Alert Types
 
-A hosted service runs every 60 seconds: it loads all **untriggered** alerts (where `TriggeredAt` is null), fetches latest price per symbol from the Alpaca Data API, and for **RSI-based** alerts also fetches recent daily bars from Alpaca. Evaluation uses **Bipins.Trading**:
+### Price Alerts
 
-- **Price alerts**: PriceAbove / PriceBelow (payload = threshold).
-- **Indicator alerts**: RsiOversold (default RSI ≤ 30) and RsiOverbought (default RSI ≥ 70), using Bipins.Trading’s **Rsi** indicator on the last 60 days of daily bars. Payload is optional: period (default 14), or `period,oversold,overbought` (e.g. `14,30,70`).
+- **PriceAbove** - Triggers when price exceeds threshold
+- **PriceBelow** - Triggers when price falls below threshold
 
-When a condition hits, a **Notification** is created, the alert’s `TriggeredAt` is set (one-shot), a **SignalEvent** is published to Bipins.Trading’s **IEventBus** (if registered), and optional **IExecutionEngine** runs (e.g. paper order via Bipins.Trading). The frontend **Notifications** tab polls GET `/api/notifications` and can enable desktop notifications for new items.
+**Payload:** Threshold value (e.g., `"150.00"`)
 
-## Execution on trigger (Bipins.Trading)
+### RSI Indicator Alerts
 
-When **Trading:ExecuteOnTrigger** is `true` in configuration (e.g. `appsettings.Development.json` or user-secrets), the app registers **IExecutionEngine** with a Bipins.Trading-based implementation. After an alert triggers (notification created, alert marked triggered), the engine submits a **paper order** via Bipins.Trading’s `PaperExecutionAdapter` (Market, 1 share at trigger price; PriceAbove → Buy, PriceBelow → Sell). No fill receiver is registered, so orders are logged only. To enable:
+- **RsiOversold** - Triggers when RSI falls below threshold (default: 30)
+- **RsiOverbought** - Triggers when RSI exceeds threshold (default: 70)
+
+**Payload:** Optional comma-separated values:
+- `period` (default: 14)
+- `period,oversold,overbought` (e.g., `"14,30,70"`)
+
+**Comparison Types:**
+- `Above` - RSI > threshold
+- `Below` - RSI < threshold
+- `CrossesOver` - RSI crosses above threshold
+- `CrossesBelow` - RSI crosses below threshold
+
+## Background Services
+
+### AlertWatchHostedService
+
+- **Interval:** Every 5 seconds
+- **Function:** 
+  - Fetches all active (untriggered) alerts
+  - Gets latest prices from Alpaca
+  - For RSI alerts, fetches historical bars and computes RSI
+  - Evaluates alert conditions
+  - Creates notifications when triggered
+  - Publishes SignalEvent to EventBus
+  - Optionally executes trades if auto-execute is enabled
+
+### WatchlistPricePushService
+
+- **Interval:** Every 15 seconds
+- **Function:**
+  - Pushes real-time price updates to connected clients via SignalR
+  - Only pushes prices for symbols that clients have subscribed to
+
+## Auto-Execution
+
+When an alert triggers and `EnableAutoExecute` is `true`, the system can automatically execute trades:
+
+1. **SignalEvent** is published to EventBus
+2. **IExecutionEngine** processes the signal
+3. Order is submitted via Bipins.Trading's execution adapter
+4. **FillEvent** is published when order fills
+
+**Configuration:**
 
 ```json
 {
@@ -139,111 +434,84 @@ When **Trading:ExecuteOnTrigger** is `true` in configuration (e.g. `appsettings.
 }
 ```
 
-If needed, build with `/p:BuildNet8Only=true` (see step 1).
+## Testing
 
-## TODO – Demonstrating Bipins.Trading library capabilities
+Run all unit tests:
 
-The list below is a roadmap of features that would showcase the **Bipins.Trading** library: engines, signals, strategies, indicator selection, risk, execution, and charting. Use it as a backlog or inspiration for extending this sample.
+```bash
+cd samples/tradingapp
+dotnet test TradingApp.sln
+```
 
----
+The test project includes comprehensive coverage for:
+- Application services (AlertService, NotificationService, SettingsService, WatchlistService)
+- Alert evaluation logic (AlertTriggerEvaluator)
+- API controllers (Alerts, Notifications, Settings, Watchlist, ActivityLogs)
 
-### Engines
+## Database
 
-- [ ] **Backtest runner in-app** – Add an API or UI to run **BacktestRunner** with user-selected symbols, date range, and strategy; use **HistoricalCandleFeed** fed by **IAlpacaService.GetBarsAsync** (e.g. daily bars).
-- [ ] **Backtest config API** – Expose `BacktestConfig` (symbols, timeframes, start/end, initial cash, warmup bars, strategy parameters) via REST and persist last-used config in **IStateStore** or app settings.
-- [ ] **Live/paper engine** – Run **IStrategy** in real time (e.g. on Alpaca bars or 1m aggregates) with **PaperExecutionAdapter** and **IPortfolioService**; emit **SignalEvent** and **OrderIntentEvent** to **IEventBus**.
-- [ ] **Multi-timeframe backtest** – Use **BacktestRunner** with multiple timeframes (e.g. 1Day + 1Hour) and pass per-timeframe **IndicatorKey** so strategies can use higher-timeframe context.
-- [ ] **IndicatorProvider in alert flow** – Reuse **IndicatorProvider** (or a scoped cache) when evaluating indicator-based alerts so RSI/MACD/etc. are consistent with backtest and strategy APIs.
+The application uses **SQLite** for data persistence. Migrations are applied automatically on startup.
 
----
+**Manual migration:**
 
-### Signals
+```bash
+cd src/TradingApp
+dotnet ef database update
+```
 
-- [ ] **Signal history API** – Persist or expose **SignalEvent** (Strategy, Symbol, Time, SignalType, Price, Reason, Metrics) from backtest runs and from live/paper runs; GET `/api/signals?symbol=&strategy=&from=&to=`.
-- [ ] **SignalEventEvent subscription** – Subscribe to **IEventBus** for **SignalEventEvent** in a hosted service or API and push new signals to the client (e.g. SignalR channel) for live strategy feedback.
-- [ ] **Signal types in UI** – Display **SignalType** (Hold, EntryLong, ExitLong, EntryShort, ExitShort) and optional **Metrics** (e.g. RSI value at signal) in watchlist, stock detail, or a dedicated “Signals” tab.
-- [ ] **Signal-to-order trace** – When execution on trigger is enabled, link **SignalEvent** → **OrderIntentEvent** → **FillEvent** and show the chain in notifications or an activity feed.
+**Database file:** `tradingapp.db` (created in the application root)
 
----
+## Security
 
-### Strategies
+- **API Credentials:** Stored encrypted using ASP.NET Core Data Protection
+- **Key Storage:** Keys persisted to `dp-keys/` directory
+- **Secrets:** Never logged or exposed in API responses (masked when retrieved)
 
-- [ ] **Strategy selector** – Let the user choose one or more **IStrategy** (e.g. **EmaCrossoverStrategy**, **RsiMeanReversionStrategy**, **BreakoutDonchianStrategy**) for backtest or paper runs; register strategies by name in DI.
-- [ ] **Strategy parameters UI** – Expose **StrategyContext.Parameters** (e.g. EMA periods, RSI oversold/overbought, Donchian period) in Settings or backtest config and pass into **BacktestRunner** via **BacktestConfig.StrategyParameters**.
-- [ ] **Custom strategy from config** – Support loading a custom strategy (e.g. DLL or script) or a predefined combo (e.g. “EMA crossover + RSI filter”) and run it in **BacktestRunner**.
-- [ ] **Strategy warmup** – Respect **IStrategy.Warmup** (RequiredCandleCount) in backtest and in live bar consumption; show “warming up” in UI when bar count is below warmup.
-- [ ] **OnTick strategy support** – If a strategy implements **IStrategy.OnTick**, feed **TradeTick** from Alpaca or simulated ticks in paper mode and invoke **OnTick** alongside **OnBar**.
+## Real-time Features
 
----
+### SignalR Hubs
 
-### Indicator selection and alerts
+1. **ActivityLogHub** - Pushes activity log entries in real-time
+   - Categories: AlertWatch, QuoteIngestion, SignalGeneration
+   - Levels: Debug, Info, Warning, Error
 
-- [ ] **Indicator picker UI** – Allow users to pick one or more indicators (e.g. RSI, MACD, Bollinger Bands, ATR, Stochastic) with parameters (period, timeframe) and optional thresholds for alerts or strategy inputs.
-- [ ] **IndicatorKey and IIndicatorProvider** – Use **IndicatorKey.Rsi(period)**, **IndicatorKey.Ema(period)**, **IndicatorKey.Macd(fast, slow, signal)**, **IndicatorKey.Atr(period)**, **IndicatorKey.Donchian(period)** (and custom keys) with **IIndicatorProvider.Get** / **GetMulti** in strategies and in alert evaluation.
-- [ ] **More alert types** – Add alerts driven by **Bipins.Trading** indicators: MACD cross, Bollinger Band touch, Stochastic overbought/oversold, ATR-based stop, ADX trend strength, etc., using the same pattern as RSI alerts.
-- [ ] **Multi-indicator alerts** – Combine conditions (e.g. RSI &lt; 30 and price &gt; 200-day SMA) using the indicator provider and bar history; store composite rule in alert payload.
-- [ ] **Indicator values in watchlist** – Optionally show last-computed RSI, MACD, or other indicator value next to price on the watchlist (batch compute on load or via SignalR push).
-- [ ] **100+ indicators** – Wire more library indicators (Momentum: CCI, CMO, StochRsi, Williams %R; Trend: ADX, Ichimoku, ParabolicSar, SuperTrend; Volatility: BollingerBands, KeltnerChannels; Volume: OBV, MFI, VWAP; etc.) into alert config or strategy parameters.
+2. **WatchlistPriceHub** - Pushes price updates for watchlist symbols
+   - Updates every 15 seconds
+   - Only for subscribed symbols
 
----
+## Development
 
-### Risk
+### Building the Solution
 
-- [ ] **IRiskManager in backtest** – Run **BacktestRunner** with **CompositeRiskManager** and configurable **IRiskPolicy** (e.g. **MaxPositionsPolicy**, **MaxDailyLossPolicy**) so backtest respects risk limits.
-- [ ] **Position sizers** – Let the user choose **IPositionSizer**: **FixedQtySizer**, **FixedDollarSizer**, **PercentEquitySizer**, or **AtrRiskSizer** (ATR-based size) for backtest and paper execution; expose size params in config.
-- [ ] **Risk policy settings** – API or UI to set max open positions, max daily loss, max position size as % of equity; persist and pass into **CompositeRiskManager**.
-- [ ] **RiskDecisionEvent** – Subscribe to **IEventBus** for **RiskDecisionEvent** and surface “order rejected by risk” in notifications or logs when **IRiskManager** blocks an intent.
+```bash
+cd samples/tradingapp
+dotnet build TradingApp.sln
+```
 
----
+### Running Tests
 
-### Execution and fills
+```bash
+cd samples/tradingapp
+dotnet test TradingApp.sln --verbosity normal
+```
 
-- [ ] **IFillReceiver and fill history** – Register **IFillReceiver** (e.g. **TradingAppFillReceiver**) and persist **FillEvent** (or a DTO) to DB; expose GET `/api/fills` for activity and PnL.
-- [ ] **Order intent history** – Persist or log **OrderIntentEvent** (before execution) and link to **FillEvent**; show “pending” vs “filled” in UI.
-- [ ] **Paper vs live adapter** – Keep **PaperExecutionAdapter** for dev/demo; add a path to plug a live **IExecutionAdapter** (e.g. Alpaca) when the user opts in, with clear “paper” vs “live” mode in settings.
-- [ ] **Slippage and fees** – Use **PaperExecutionAdapter** options (if exposed) for slippage/fee simulation in backtest and paper runs.
+### Frontend Development
 
----
+```bash
+cd src/TradingApp/Web/ClientApp
+npm install
+npm run dev
+```
 
-### Events and event bus
+## Technology Stack
 
-- [ ] **IEventBus dashboard** – Optional debug view that subscribes to **IEventBus** and streams recent **ITradingEvent** (Signal, OrderIntent, Fill, PositionChanged, RiskDecision, Diagnostic, Error) to the client (e.g. SignalR or SSE).
-- [ ] **Event persistence** – Optionally persist events to **IStateStore** or a log table for replay or audit.
-- [ ] **PositionChangedEvent** – On **FillEvent**, portfolio updates; subscribe to **PositionChangedEvent** to push position updates to the client (e.g. “You now have 10 shares of AAPL”).
+- **Backend:** .NET 8, ASP.NET Core, Entity Framework Core, SignalR
+- **Frontend:** Vue 3, Vite, Vue Router, Pinia
+- **Database:** SQLite
+- **External APIs:** Alpaca Markets API
+- **Trading Library:** Bipins.Trading
+- **Testing:** xUnit, Moq, FluentAssertions
 
----
+## License
 
-### Charting and export
-
-- [ ] **IChartSink integration** – After a backtest run, pass **IChartSink** (e.g. **JsonFileChartSink**) into **BacktestRunner** so signals and equity curve are exported to JSON for charting tools or custom UI.
-- [ ] **Equity curve API** – **BacktestResult** (or runner) can expose equity curve; add GET `/api/backtest/result` or `/api/backtest/equity-curve` for the last run (or by run id) and plot in the SPA.
-- [ ] **Signal overlay** – In stock detail or a dedicated backtest view, show candles plus signal markers (e.g. EntryLong/ExitLong) from **BacktestResult** or from **JsonFileChartSink** output.
-- [ ] **Export backtest report** – Export **BacktestResult** (PnL, drawdown, trade count, etc.) as JSON or CSV for external analysis.
-
----
-
-### Persistence and state
-
-- [ ] **IStateStore for app state** – Use **JsonFileStateStore** or **InMemoryStateStore** for backtest config, last-selected strategy, or user preferences (e.g. default indicators) and load on startup.
-- [ ] **Strategy state** – If strategies use **StrategyState** or custom state, persist via **IStateStore** keyed by strategy + symbol so state survives restarts in paper mode.
-
----
-
-### Frontend and UX
-
-- [ ] **Backtest page** – Dedicated page: symbol(s), date range, strategy dropdown, “Run backtest” button; show summary (PnL, trades, max drawdown) and link to equity curve or signal list.
-- [ ] **Indicators panel** – On stock detail or watchlist, “Add indicator” with dropdown (RSI, MACD, BB, etc.) and period; display last value or mini sparkline.
-- [ ] **Alerts builder** – UI to add alert with “Condition”: Price above/below, RSI oversold/overbought, or (future) MACD cross, BB touch, etc., with payload for parameters.
-- [ ] **Paper trading mode toggle** – Settings: “Paper trading” on/off; when on, all execution goes through **PaperExecutionAdapter** and fills are shown as “Paper” in activity.
-- [ ] **Notifications for all event types** – Extend notifications to include not only alert triggers but also fills, risk rejections, and (optional) signal events.
-
----
-
-### Integration notes (existing and future)
-
-- **IAlertEngine** (Application): interface for executing when an alert is created; the in-repo flow uses **AlertTriggerEvaluator** and the background watcher for evaluation.
-- **IExecutionEngine** (Application): optional execution when an alert triggers; implementation uses Bipins.Trading’s **PaperExecutionAdapter** (Buy for PriceAbove/RsiOversold, Sell for PriceBelow/RsiOverbought).
-- **IFillReceiver** (Bipins.Trading): when execution on trigger is enabled, **TradingAppFillReceiver** is registered: it logs paper fills and publishes **FillEvent** to **IEventBus**.
-- **IEventBus** (Bipins.Trading): **InMemoryEventBus** is registered; on alert trigger a **SignalEventEvent** is published; on paper fill a **FillEvent** is published.
-- **IAlpacaService.GetBarsAsync**: returns **Bipins.Trading.Domain.Candle** list for indicator-based alerts (Alpaca Data API v2 bars).
-- **Bipins.Trading:** RSI alerts use **Indicators.Momentum.Rsi**; execution uses **Execution.PaperExecutionAdapter**. More indicator types and strategies can be wired the same way.
+This is a sample application demonstrating the Bipins.Trading library capabilities.
