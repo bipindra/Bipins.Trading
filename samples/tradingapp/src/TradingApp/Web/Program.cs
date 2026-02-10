@@ -43,6 +43,14 @@ builder.Services.AddSingleton<IWatchlistPriceSubscriptionStore, WatchlistPriceSu
 builder.Services.AddSignalR();
 builder.Services.AddHostedService<AlertWatchHostedService>();
 builder.Services.AddHostedService<WatchlistPricePushService>();
+builder.Services.AddScoped<IAlpacaSettingsRepository, AlpacaSettingsRepository>();
+builder.Services.AddScoped<IAlpacaService, AlpacaService>();
+builder.Services.AddScoped<IAlertRepository, AlertRepository>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<IActivityLogRepository, ActivityLogRepository>();
+builder.Services.AddScoped<IWatchlistRepository, WatchlistRepository>();
+builder.Services.AddScoped<IExecutionEngine, BipinsExecutionEngine>();
+
 
 // Register execution adapter for manual trading (always available)
 builder.Services.AddSingleton<IFillReceiver, TradingAppFillReceiver>();
