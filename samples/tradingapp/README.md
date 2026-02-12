@@ -144,10 +144,10 @@ flowchart LR
     end
     
     subgraph "API Endpoints"
-        ALERTS_API[/api/alerts]
-        WATCHLIST_API[/api/watchlist]
-        STOCKS_API[/api/stocks]
-        SETTINGS_API[/api/settings]
+        ALERTS_API[/api/alerts/]
+        WATCHLIST_API[/api/watchlist/]
+        STOCKS_API[/api/stocks/]
+        SETTINGS_API[/api/settings/]
     end
     
     subgraph "Services"
